@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # Python 2.7 scraper for https://mentor.ieee.org/802.11/documents
+# TODO: Reimplement from BeautifulSoup to lxml because they say lxml is faster.
 
 import requests
 from bs4 import BeautifulSoup
