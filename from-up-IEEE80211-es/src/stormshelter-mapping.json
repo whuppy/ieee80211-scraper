@@ -1,0 +1,53 @@
+{
+    "settings": {
+        "index": {
+            "analysis": {
+                "normalizer": {
+                    "custom_normalizer_lowercase": {
+                        "type": "custom",
+                        "filter": "lowercase"
+                    }
+                }
+            }
+        }
+    },
+    "mappings": {
+        "properties": {
+            "wgroup": {
+                "type": "keyword",
+                "normalizer": "custom_normalizer_lowercase"
+            },
+            "author": {
+                "type": "keyword",
+                "normalizer": "custom_normalizer_lowercase"
+            },
+            "affiliation": {
+                "type": "keyword",
+                "normalizer": "custom_normalizer_lowercase"
+            },
+            "created_date": {
+                "type": "date",
+                "format": "strict_date_optional_time||epoch_millis"
+            },
+            "uploaded_date": {
+                "type": "date",
+                "format": "strict_date_optional_time||epoch_millis"
+            },
+            "dcn_year": {
+                "type": "integer"
+            },
+            "dcn_num": {
+                "type": "integer"
+            },
+            "dcn_rev": {
+                "type": "integer"
+            },
+            "title": {
+                "enabled": "false"
+            },
+            "doc_url": {
+                "enabled": "false"
+            }
+        }
+    }
+}

@@ -1,0 +1,12 @@
+                # Download and index:
+                print(f'{local_filename} downloading . . .')
+                with requests.get(f'{self.docrepo_root}{doc_url}', stream=True) as r:
+                    with open(local_filename, 'wb') as f:
+                        shutil.copyfileobj(r.raw, f)
+                print(f'{local_filename} downloaded.')
+                try:
+                    esclient.localfile_to_esindex(local_filename = local_filename)
+                except Exception as e:
+                    print(f'Error indexing {local_filename}.')
+                    failed_entries.append([local_filename, e])
+

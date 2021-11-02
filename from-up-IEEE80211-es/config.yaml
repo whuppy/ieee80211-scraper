@@ -1,0 +1,30 @@
+# IEEE 802.11 Document Repository
+ieee80211:
+        document_root: 'https://mentor.ieee.org/802.11/documents'
+        docrepo_root:  'https://mentor.ieee.org/'
+        copy_to_s3: False
+        keep_local_copies: False
+        # This should be determined at runtime, but the IEEE webmaster broke our functionality.
+        # But they've restored it so this setting is deprecated until they break it again.
+        num_pages: 765
+
+# S3 bucket: get from S3_BUCKET env var
+
+# AWS auth: Get from AWS_KEY_ID, AWS_KEY_SECRET, and AWS_REGION env vars.
+
+# log files
+log:
+        encoded: 'encoded.log'
+        ignored: 'ignored.log'
+        error:   'error.log'
+
+# ElasticSearch: Get from env vars ES_URL, ES_INDEX, and ES_DOCTYPE now.
+es:
+        host:  'search-temp4-x4lu4vl355byrdaepftgpjnkva.us-east-2.es.amazonaws.com'
+        port:  443
+        # index: 'ieee80211up' Get this now froom env var ES_INDEX
+        type:  'document'
+        useHttpAuth: False
+        # Maximum Elasticsearch submission size in bytes:
+        size_limit: 10485760 
+        mapping_filename: '../src/mapping.json'

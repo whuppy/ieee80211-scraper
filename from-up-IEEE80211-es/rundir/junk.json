@@ -1,0 +1,54 @@
+{'_id': '11-21-1651-01-00bb-08-october-2021-conference-call-agenda.pptx',
+ '_index': 'ieee80211repo',
+ '_primary_term': 1,
+ '_seq_no': 0,
+ '_source': {'affiliation': 'pureLiFi',
+             'attachments': [{'attachment': {'author': 'Serafimovski, Nikola',
+                                             'content': 'Light Communications '
+                                                        'doc.: IEEE '
+                                                        '802.11-21/1651r1\n'
+                                                        'doc.: IEEE '
+                                                        '802.11-19/1413r0\n'
+                                                        'Sept. 2019\n'
+                                                        'Nikola Serafimovski, '
+                                                        'pureLiFi\n'
+                                                        'Page 14\n'
+                                                        '\n'
+                                                        '\n'
+                                                        'Submission\n'
+                                                        '\n'
+                                                        '\n'
+                                                        '\n'
+                                                        '\tName\n'
+                                                        '\tAffiliations\n'
+                                                        '\tAddress\n'
+                                                        '\tPhone\n'
+                                                        '\temail\n'
+                                                        '\n'
+                                                        '\tNikola '
+                                                        'Serafimovski\n'
+                                                        '\tpureLiFi\n'
+                                                        '\t\n'
+                                                        '\t\n'
+                                                        '\t'
+                                                        'nikola.serafimovski@purelifi.com',
+                                             'content_length': 9841,
+                                             'content_type': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                                             'date': '2019-08-08T09:50:31Z',
+                                             'language': 'en',
+                                             'title': '11-19-1413-00-00bb-september-2019-meeting-agenda'},
+                              'filename': '11-21-1651-01-00bb-08-october-2021-conference-call-agenda.pptx'}],
+             'auth_affil': 'Nikola Serafimovski (pureLiFi)',
+             'author': 'Nikola Serafimovski ',
+             'created_date': '08-Oct-2021 ET',
+             'dcn_num': '1651',
+             'dcn_rev': '1',
+             'dcn_year': '2021',
+             'doc_url': '/802.11/dcn/21/11-21-1651-01-00bb-08-october-2021-conference-call-agenda.pptx',
+             'time_indexed': '2021-10-13T20:28:56.408178',
+             'title': '08-october-2021-conference-call-agenda',
+             'upload_date': '08-Oct-2021 11:48:03 ET',
+             'wgroup': 'TGbb'},
+ '_type': '_doc',
+ '_version': 1,
+ 'found': True}

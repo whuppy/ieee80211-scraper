@@ -1,0 +1,225 @@
+To set up the machine, in this case an Amazon Linux (RH/Fedora/CentOS) instance:
+sudo yum install python3
+sudo yum install python3-pip
+sudo yum install git
+
+Use "git config --list" to see if you're logged in.
+Use "git config --global user.name 'whuppy' " and 
+"git config --global user.email "github@schmelzer.fastmail.fm" if not.
+Better yet just Set up git account info in ~/.gitconfig:
+[user]
+        name = whuppy
+        email = github@schmelzer.fastmail.fm
+Mode 664 is fine.
+
+Then make sure virtualenv and virtualenvwrapper are also on board:
+pip3 install virtualenv
+pip3 install virtualenvwrapper
+Pretty sure you can do it in non-root userspace.
+
+Don't put aws credentials in .bashrc,
+make the file ~/.aws/credentials and put in:
+[default]
+aws_access_key_id = xxx
+aws_secret_access_key = xxx
+and ~/.aws/config and put in:
+[default]
+output = json
+region = us-east-2
+chmod 600 for both of them.
+
+Add the following python virtualenv stuff to ~/.bashrc:
+# the python version you want to use in virtualenv
+export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
+# the folder for all your virtual environments
+export WORKON_HOME=$HOME/.virtualenvs
+# the path to your virtualenvwrapper.sh may be different
+#source /usr/local/bin/virtualenvwrapper.sh
+# If you install python virtualenv as non-root then it's at:
+source /home/ec2-user/.local/bin/virtualenvwrapper.sh
+
+Check out with git using SSH connection:
+git clone git@github.com:unifiedpatents/IEEE80211-es.git
+Best to have set up your private key (e.g. whuppy's "moolteepass")
+in ssh-agent.
+
+This won't work unless you've sourced those .bashrc lines above:
+cd IEEE80211-es/
+mkvirtualenv IEEE80211
+pip3 install -r requirements.txt
+
+Other stuff to put in .bashrc:
+# ElasticSearch endpoint
+export ES_URL=xxx
+#ElasticSearch index name
+export ES_INDEX=xxx
+
+Currently call it by '/usr/bin/env python src/scrape_document_urls.py'
+
+The first 2 pages worth of documents (200 documents)
+take up 56M of filesystem storage. 
+That's an average of 280k / file. 
+Plenty small if the whole dataset is consistent.
+
+TODO: 
+Use real logging instead of print statements.
+- Probably not gonna do that because logging in Jupyter is b0rked
+  and that's where things get most debugged.
+Put all the config information into config.yaml like the JCTVC project.
+- Nope. Just about everything's coming in through env vars.
+
+I just tried to do a full repo down/upload and got connections shut down on me.
+Need to code a way to handle this.
+Figure out how to detect this has happened.
+How to handle:
+Figure out last page successfully downloaded.
+For the metadata, start_page can stay unchanged.
+For the metadata, last_page needs to be set to current_page - 1, which is the last successful full page.
+Write out metadata to bucket.
+
+N.B. The push command is now 
+git push base dev
+Base is the whuppy github
+Dev is the branch I work on
+So the command is pushing to the dev branch on the whuppy github repo.
+
+That command once again is . . .
+
+git push base dev
+
+. . . thank you and goodnight.
+
+Successfully downloaded entire repo's documents and their metadata.
+
+Successfully retained all documents and their metadata.
+Files take up 30G
+Runtime from:
+2021-06-23T00:50:52.632124
+to
+2021-06-23T08:16:04.579577
+Call it 7.5 hours.
+
+TODO: when copying the metadata.json file to bucket,
+rename it metadata-<timestamp>.json ,
+e.g. metadata-20210623132257.json
+
+Reimplemented scraper in lxml. Running it now to see if it's faster.
+Hehheh, no.
+2021-06-24T21:05:31.722960
+to
+2021-06-25T06:40:26.355890
+9.5 hours. So, no.
+
+
+created Elastic Search domain
+Created upieee80211es ES domain
+Master username: upes
+Master password: 3snotFair!
+Endpoint: https://search-upieee80211es-uvv4cqt6l7wqcdzsaie7cqwjuq.us-east-2.es.amazonaws.com/
+
+Pretty-print JSON from the command line:
+python -m json.tool < metadata-108-117.json |less
+
+Here are the env vars that need to be set specifically for this program:
+S3_BUCKET=upieee80211
+
+AWS_REGION=us-east-2
+#Boto3 will check these environment variables for credentials:
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+
+#Created upieee80211es ES domain
+#Master username: 
+#Master password:
+#Endpoint: https://search-upieee80211es-uvv4cqt6l7wqcdzsaie7cqwjuq.us-east-2.es.amazonaws.com/
+ES_MASTER_USERNAME=
+ES_MASTER_PASSWORD=
+ES_URL=https://search-upieee80211es-uvv4cqt6l7wqcdzsaie7cqwjuq.us-east-2.es.amazonaws.com/
+ES_INDEX=ieee80211up
+ES_DOCTYPE=document
+
+# This assumes the CWD will be one down from config.yaml's location:
+YAML_FILENAME=../config.yaml
+
+All the file extensions in the repo as of 2021-08-18:
+    "file_exts_seen": [
+        "bin",
+        "csv",
+        "deploy",
+        "doc",
+        "doc0",
+        "docm",
+        "docx",
+        "dot",
+        "eml",
+        "html",
+        "mpg",
+        "odp",
+        "ods",
+        "odt",
+        "pdf",
+        "pot",
+        "potm",
+        "potx",
+        "pps",
+        "ppt",
+        "pptm",
+        "pptx",
+        "rtf",
+        "txt",
+        "vsd",
+        "vsdx",
+        "xls",
+        "xlsm",
+        "xlsx",
+        "zip"
+    ],
+
+Use "git add --update" a/k/a "git add -u" to automatically add all updated files.
+
+Hmm. It looks like the whole indexing process needs to be driven by the metadata file because
+we want those metadata fields to be indexed along with the document.
+
+Need to pull changes from origin (i.e. unifiedpatents/IEEE80211-es.git) into base (i.e. whuppy/IEEE80211-es.git) dev branch.
+
+Tenyo says:
+1. Switch to whuppy:main
+2. Pull unifiedpatents:main
+3. switch back to whuppy:dev
+4. run git rebase main
+
+Make new ES instance:
+Allow IP from 3.142.184.192 (i.e. yooper EC2 instance)
+Also 71.190.30.202 (vz fios at home)
+
+Here's what the IP-based access policy looks like.
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "*"
+      },
+      "Action": [
+        "es:*"
+      ],
+      "Condition": {
+        "IpAddress": {
+          "aws:SourceIp": [
+            "3.142.184.192",
+            "71.190.30.202"
+          ]
+        }
+      },
+      "Resource": "arn:aws:es:us-east-2:753329725132:domain/temp4/*"
+    }
+  ]
+}
+EncryptionEdit
+Require HTTPSEnabled
+
+2021-09-01
+Got a metadata-driven repo indexer working but now I'm running up against file sizes when submitting to indexing:
+elasticsearch.exceptions.TransportError: TransportError(413, '{"Message":"Request size exceeded 10485760 bytes"}')
+
