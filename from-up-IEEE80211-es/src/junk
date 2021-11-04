@@ -1,12 +1,26 @@
-                # Download and index:
-                print(f'{local_filename} downloading . . .')
-                with requests.get(f'{self.docrepo_root}{doc_url}', stream=True) as r:
-                    with open(local_filename, 'wb') as f:
-                        shutil.copyfileobj(r.raw, f)
-                print(f'{local_filename} downloaded.')
-                try:
-                    esclient.localfile_to_esindex(local_filename = local_filename)
-                except Exception as e:
-                    print(f'Error indexing {local_filename}.')
-                    failed_entries.append([local_filename, e])
-
+curl -X PUT "localhost:9200/_ingest/pipeline/my-pipeline?pretty" -H 'Content-Type: application/json' -d'
+{
+  "description": "My optional pipeline description",
+  "processors": [
+    {
+      "set": {
+        "description": "My optional processor description",
+        "field": "my-long-field",
+        "value": 10
+      }
+    },
+    {
+      "set": {
+        "description": "Set \u0027my-boolean-field\u0027 to true",
+        "field": "my-boolean-field",
+        "value": true
+      }
+    },
+    {
+      "lowercase": {
+        "field": "my-keyword-field"
+      }
+    }
+  ]
+}
+'
