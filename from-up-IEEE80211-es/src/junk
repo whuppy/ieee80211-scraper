@@ -1,4 +1,26 @@
-curl -I "localhost:9200/my-data-stream?pretty"
-
-:w
-:
+        tenyo_ingest_pipeline = {
+            "description": "Extract attachment information from arrays",
+            "processors": [
+                {
+                    "foreach": {
+                        "field": "attachments",
+                        "processor": {
+                            "attachment": {
+                                "target_field": "_ingest._value.attachment",
+                                "field": "_ingest._value.b64data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "foreach": {
+                        "field": "attachments",
+                        "processor": {
+                            "remove": {
+                                "field": "_ingest._value.b64data"
+                            }
+                        }
+                    }
+                }
+            ]
+        }

@@ -64,6 +64,40 @@ class ElasticRest:
         result = requests.head(url)
         return (200 == result.status_code)
 
+    def put_pipeline(self, pipeline_name=None, pipeline_data=None):
+        if (None == pipeline_name):
+            pipeline_name = "attachment"
+        if (None == pipeline_data):
+            pipeline_data = {
+                "description": "Extract attachment information from arrays",
+                "processors": [
+                    {
+                        "foreach": {
+                            "field": "attachments",
+                            "processor": {
+                                "attachment": {
+                                    "target_field": "_ingest._value.attachment",
+                                    "field": "_ingest._value.b64data"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "foreach": {
+                            "field": "attachments",
+                            "processor": {
+                                "remove": {
+                                    "field": "_ingest._value.b64data"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        url = self.es_url + "_ingest/pipeline/" + pipeline_name
+        result = requests.put(url, data=pipeline_data)
+        return result
+
     def factory_reset(self, index_name=None, data=None):
         if (None == index_name):
             index_name = self.es_index
@@ -138,6 +172,7 @@ if __name__ == '__main__':
     pp = pprint.PrettyPrinter(indent=1)
     er = ElasticRest()
 
+    print(er.authheader)
     print(er.factory_reset())
     print(er.index_exists())
 
