@@ -14,42 +14,111 @@ import os
 import requests
 import json
 import pprint
-
+import base64
 
 class ElasticRest:
     '''
     Use python's web interface instead of curl to access ElasticSearch.
     It seems kind of silly to me now to have a whole separate class as a wrapper.
+
+    This is still pretty specific to the IEEE802.11 repo scaper implementation.
     '''
 
     def __init__(self):
         self.es_url  = os.environ['ES_URL']
         self.es_index = os.environ['ES_INDEX']
-        #self.bucketname = os.environ['S3_BUCKET']
-        #self.aws_key_id     = os.environ['AWS_ACCESS_KEY_ID']
-        #self.aws_key_secret = os.environ['AWS_SECRET_ACCESS_KEY']
-        #self.aws_region     = os.environ['AWS_REGION']
-        pass
 
-    def factory_reset(self):
-        pass
+        self.es_user     = os.environ['ES_MASTER_USERNAME']
+        self.es_password = os.environ['ES_MASTER_PASSWORD']
+        userpass = (self.es_user + ":" + self.es_password).encode("utf-8")
+        self.authtoken = base64.b64encode(userpass)
+        self.authheader = "Authorization: Basic " + self.authtoken.decode("utf-8")
 
-    def get_index(self):
-        url = self.es_url + self.es_index
+    def create_index(self, index_name=None, data=None):
+        if (None == index_name):
+            index_name = self.es_index
+        url = self.es_url + index_name
+        headers = {"Content-Type" : "application/json"}
+        result = requests.put(url, data=data, headers=headers)
+        #print(result.text)
+        return result
+    
+    def get_index(self, index_name=None):
+        if (None == index_name):
+            index_name = self.es_index
+        url = self.es_url + index_name
         result = requests.get(url)
         return result.json()
 
-    def search_index(self, query=''):
-        url = self.es_url + self.es_index + '/_search'
+    def delete_index(self, index_name=None):
+        if (None == index_name):
+            index_name = self.es_index
+        url = self.es_url + index_name
+        result = requests.delete(url)
+        return result
+
+    def index_exists(self, index_name=None):
+        if (None == index_name):
+            index_name = self.es_index
+        url = self.es_url + index_name
+        result = requests.head(url)
+        return (200 == result.status_code)
+
+    def factory_reset(self, index_name=None, data=None):
+        if (None == index_name):
+            index_name = self.es_index
+        if self.index_exists(index_name):
+            self.delete_index(index_name)
+        if (None == data):
+            data = '''
+                {
+                    "settings": {
+                        "index": {
+                            "analysis": {
+                                "normalizer": {
+                                    "custom_normalizer_lowercase": {
+                                        "type": "custom",
+                                        "filter": "lowercase"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "mappings": {
+                        "properties": {
+                            "wgroup": { "type": "keyword", "normalizer": "custom_normalizer_lowercase" },
+                            "author": { "type": "keyword", "normalizer": "custom_normalizer_lowercase" },
+                            "affiliation": { "type": "keyword", "normalizer": "custom_normalizer_lowercase" },
+                            "created_date": { "type": "date", "format": "dd-LLL-yyyy zz" },
+                            "upload_date": { "type": "date", "format": "dd-LLL-yyyy HH:mm:ss zz" },
+                            "dcn_year": { "type": "integer" },
+                            "dcn_num": { "type": "integer" },
+                            "dcn_rev": { "type": "integer" },
+                            "title": { "enabled": "false" },
+                            "doc_url": { "enabled": "false" }
+                        }
+                    }
+                }
+            '''
+
+        result = self.create_index(index_name)
+        return result
+
+    def search_index(self, query='', index_name=None):
+        if (None == index_name):
+            index_name = self.es_index
+        url = self.es_url + index_name + '/_search'
         headers = {"Content-Type" : "application/json"}
         result = requests.get(url, data=query, headers=headers)
         return result.json()
 
-    def most_recent_docs(self):
+    def most_recent_docs(self, index_name=None):
         '''
         Retrieve sorted by document created_date in descending order.
         '''
-        url = self.es_url + self.es_index + '/_search'
+        if (None == index_name):
+            index_name = self.es_index
+        url = self.es_url + index_name + '/_search'
         headers = {"Content-Type" : "application/json"}
         query = '''
         {
@@ -69,13 +138,21 @@ if __name__ == '__main__':
     pp = pprint.PrettyPrinter(indent=1)
     er = ElasticRest()
 
-    result = er.get_index()
-    pp.pprint(result)
+    print(er.factory_reset())
+    print(er.index_exists())
+
+    exit(1)
+
+    result = er.index_exists(er.es_index)
+    pp.pprint(result.status_code)
+
+    result = er.index_exists("bogus")
+    pp.pprint(result.status_code)
+
 
     url = er.es_url + er.es_index + "/_stats/docs"
     result = requests.get(url)
     pprint.pprint(result.json())
-    exit(1)
 
     pp.pprint(er.most_recent_docs())
 
