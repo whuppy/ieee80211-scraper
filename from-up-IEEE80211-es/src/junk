@@ -1,26 +1,22 @@
-        tenyo_ingest_pipeline = {
-            "description": "Extract attachment information from arrays",
-            "processors": [
-                {
-                    "foreach": {
-                        "field": "attachments",
-                        "processor": {
-                            "attachment": {
-                                "target_field": "_ingest._value.attachment",
-                                "field": "_ingest._value.b64data"
-                            }
-                        }
-                    }
-                },
-                {
-                    "foreach": {
-                        "field": "attachments",
-                        "processor": {
-                            "remove": {
-                                "field": "_ingest._value.b64data"
-                            }
-                        }
-                    }
-                }
-            ]
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "*"
+      },
+      "Action": "es:*",
+      "Resource": "arn:aws:es:us-east-2:753329725132:domain/temp4/*",
+      "Condition": {
+        "IpAddress": {
+          "aws:SourceIp": [
+            "3.142.184.192",
+            "72.78.207.167",
+            "71.190.30.202"
+          ]
         }
+      }
+    }
+  ]
+}
