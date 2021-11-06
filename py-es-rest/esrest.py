@@ -60,6 +60,9 @@ class ElasticRest:
         return (200 == requests.head(url).status_code)
 
     def put_doc(self, doc_id, doc_data, index_name=None, pipeline_name=None):
+        '''
+        Put a document in the index.
+        '''
         if (None == index_name):
             index_name = self.es_index
         url = self.es_url + index_name + "/_create/" + doc_id
@@ -71,6 +74,9 @@ class ElasticRest:
         return result
 
     def get_doc(self, doc_id, index_name=None):
+        '''
+        Retrieve a document from the index.
+        '''
         if (None == index_name):
             index_name = self.es_index
         url = self.es_url + index_name + "/_doc/" + doc_id
@@ -113,6 +119,9 @@ class ElasticRest:
         return result
 
     def factory_reset(self, index_name=None, data=None):
+        '''
+        Delete and re-create the index.
+        '''
         if (None == index_name):
             index_name = self.es_index
         if self.index_exists(index_name):
@@ -153,6 +162,9 @@ class ElasticRest:
         return result
 
     def search_index(self, query='', index_name=None):
+        '''
+        Uses the _search interface, which is different from getting a doc.
+        '''
         if (None == index_name):
             index_name = self.es_index
         url = self.es_url + index_name + '/_search'
@@ -178,19 +190,10 @@ class ElasticRest:
         result = requests.get(url, data=query, headers=headers)
         return result.json()
 
-
-if __name__ == '__main__':
-    pp = pprint.PrettyPrinter(indent=1)
-    er = ElasticRest()
-    docrepo_root = 'https://mentor.ieee.org/'
-
-    #print(er.factory_reset().text)
-
-    # Index a small example set of metadata:
-    with open('smol_meda.json', 'r') as read_file:
-        metadata_dict = json.load(read_file)
-    # add them to index:
-    for entry in metadata_dict['repo_entries']:
+    def localfile_to_esindex(self, repo_entry):
+        '''
+        Read in a local file and submit it to index.
+        '''
         local_filename = entry['doc_url'].split('/')[-1]
         result = er.get_doc(local_filename)
         if (200 == result.status_code):
@@ -211,16 +214,26 @@ if __name__ == '__main__':
             # huh that seems to work
 
             result = er.put_doc(doc_id=local_filename, doc_data=es_body)
-            print(result.text)
             os.remove(local_filename)
+
+        return result
+
+if __name__ == '__main__':
+    pp = pprint.PrettyPrinter(indent=1)
+    er = ElasticRest()
+    docrepo_root = 'https://mentor.ieee.org/'
+
+    #print(er.factory_reset().text)
+
+    # Read in a small example set of metadata:
+    with open('smol_meda.json', 'r') as read_file:
+        metadata_dict = json.load(read_file)
+    # Add them to index:
+    for entry in metadata_dict['repo_entries']:
+        er.localfile_to_esindex(entry)
 
     # Get stats on the index:
     pprint.pprint(requests.get(er.es_url + er.es_index + "/_stats/docs").json())
-
-    # Retrieve one of the docs from the index:
-    doc_entry = metadata_dict['repo_entries'][4]
-    doc_id = doc_entry['doc_url'].split('/')[-1]
-    pp.pprint(er.get_doc(doc_id=doc_id).json())
 
     exit(1)
     ###############
@@ -245,4 +258,9 @@ if __name__ == '__main__':
     '''
     pp.pprint(er.search_index(query_sort_by_title).json())
     
+    # Retrieve one of the docs from the index:
+    doc_entry = metadata_dict['repo_entries'][4]
+    doc_id = doc_entry['doc_url'].split('/')[-1]
+    pp.pprint(er.get_doc(doc_id=doc_id).json())
+
 
