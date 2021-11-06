@@ -2,11 +2,7 @@
 #
 # Run the ES REST interface via the web.
 # Basically using python instead of curl.
-
 #curl -X PUT "https://search-open-hugkeqllxa5lm2g36arrt7nbhe.us-west-1.es.amazonaws.com/jctvc" -H 'Content-Type: application/json' --data-binary "@mapping.json"
-#curl -X PUT "https://search-open-hugkeqllxa5lm2g36arrt7nbhe.us-west-1.es.amazonaws.com/jvt" -H 'Content-Type: application/json' --data-binary "@mapping.json"
-#curl -X PUT "https://search-jct-vc-3adhpezogrrffz6vs4zhdwruhi.us-west-1.es.amazonaws.com/meeting" -H 'Content-Type: application/json' --data-binary "@mapping.json"
-#curl -X PUT "https://search-jct-vc-3adhpezogrrffz6vs4zhdwruhi.us-west-1.es.amazonaws.com/jvt" -H 'Content-Type: application/json' --data-binary "@mapping.json"
 
 import os
 import shutil
@@ -35,14 +31,12 @@ class ElasticRest:
         self.authtoken = base64.b64encode(userpass)
         self.authheader = { "Authorization" : "Basic " + self.authtoken.decode("utf-8") }
 
-
     def create_index(self, index_name=None, data=None):
         if (None == index_name):
             index_name = self.es_index
         url = self.es_url + index_name
         headers = {"Content-Type" : "application/json"}
         result = requests.put(url, data=data, headers=headers)
-        #print(result.text)
         return result
     
     def get_index(self, index_name=None):
@@ -50,7 +44,7 @@ class ElasticRest:
             index_name = self.es_index
         url = self.es_url + index_name
         result = requests.get(url)
-        return result.json()
+        return result
 
     def delete_index(self, index_name=None):
         if (None == index_name):
@@ -63,8 +57,7 @@ class ElasticRest:
         if (None == index_name):
             index_name = self.es_index
         url = self.es_url + index_name
-        result = requests.head(url)
-        return (200 == result.status_code)
+        return (200 == requests.head(url).status_code)
 
     def put_doc(self, doc_id, doc_data, index_name=None, pipeline_name=None):
         if (None == index_name):
@@ -74,9 +67,7 @@ class ElasticRest:
             pipeline_name = 'attachment'
         options = {'pipeline' : pipeline_name}
         headers = {"Content-Type" : "application/json"}
-        #print(doc_data)
         result = requests.put(url, data=json.dumps(doc_data), params=options, headers=headers)
-        print(result.url, result.text)
         return result
 
     def get_doc(self, doc_id, index_name=None):
@@ -152,7 +143,7 @@ class ElasticRest:
                             "dcn_year": { "type": "integer" },
                             "dcn_num": { "type": "integer" },
                             "dcn_rev": { "type": "integer" },
-                            "title": { "enabled": "false" },
+                            "title": { "type": "keyword", "normalizer": "custom_normalizer_lowercase" },
                             "doc_url": { "enabled": "false" }
                         }
                     }
@@ -167,11 +158,12 @@ class ElasticRest:
         url = self.es_url + index_name + '/_search'
         headers = {"Content-Type" : "application/json"}
         result = requests.get(url, data=query, headers=headers)
-        return result.json()
+        return result
 
     def most_recent_docs(self, index_name=None):
         '''
         Retrieve sorted by document created_date in descending order.
+        This has been tested to work properly in both asc and desc order.
         '''
         if (None == index_name):
             index_name = self.es_index
@@ -179,12 +171,8 @@ class ElasticRest:
         headers = {"Content-Type" : "application/json"}
         query = '''
         {
-            "sort" : [
-                { "created_date" : "desc" }
-            ],
-            "query" : {
-                "match_all" : {}
-            }
+            "sort" : [ { "created_date" : "desc" } ],
+            "query" : { "match_all" : {} }
         }
         '''
         result = requests.get(url, data=query, headers=headers)
@@ -198,8 +186,10 @@ if __name__ == '__main__':
 
     #print(er.factory_reset().text)
 
+    # Index a small example set of metadata:
     with open('smol_meda.json', 'r') as read_file:
         metadata_dict = json.load(read_file)
+    # add them to index:
     for entry in metadata_dict['repo_entries']:
         local_filename = entry['doc_url'].split('/')[-1]
         result = er.get_doc(local_filename)
@@ -207,49 +197,52 @@ if __name__ == '__main__':
             print(f'{local_filename} already in index {er.es_index}, skipping . . .')
         else:
             print(f'{local_filename} not in index {er.es_index}, downloading and indexing . . .')
+            es_body = entry
             with requests.get(f'{docrepo_root}{entry["doc_url"]}', stream=True) as r:
                 with open(local_filename, 'wb') as f:
                     shutil.copyfileobj(r.raw, f)
             with open(local_filename, "rb") as local_file:
                 local_encoded = base64.b64encode(local_file.read()).decode("utf-8")
-            es_body = entry
-            #es_body["time_indexed"] = datetime.now()
             es_body["attachments"] = [ {"filename" : local_filename, "b64data" : local_encoded} ]
+
+            #for some reason this doesn't work as serial json,
+            # maybe cast it into a string? :
+            es_body["time_indexed"] = str(datetime.now())
+            # huh that seems to work
+
             result = er.put_doc(doc_id=local_filename, doc_data=es_body)
+            print(result.text)
+            os.remove(local_filename)
 
-    url = er.es_url + er.es_index + "/_stats/docs"
-    result = requests.get(url)
-    pprint.pprint(result.json())
+    # Get stats on the index:
+    pprint.pprint(requests.get(er.es_url + er.es_index + "/_stats/docs").json())
 
-    pp.pprint(er.most_recent_docs())
+    # Retrieve one of the docs from the index:
+    doc_entry = metadata_dict['repo_entries'][4]
+    doc_id = doc_entry['doc_url'].split('/')[-1]
+    pp.pprint(er.get_doc(doc_id=doc_id).json())
 
     exit(1)
-    
+    ###############
+
     print(er.authheader)
     print(er.factory_reset())
     print(er.index_exists())
     pp.pprint(er.get_index())
 
-
-    result = er.index_exists(er.es_index)
-    pp.pprint(result.status_code)
-
     result = er.index_exists("bogus")
     pp.pprint(result.status_code)
 
+    # This works.
+    #pp.pprint(er.most_recent_docs())
 
-
-    query2 = '''
+    # This works:
+    query_sort_by_title = '''
     {
-        "sort" : [
-            { "created_date" : "desc" }
-        ],
-        "query" : {
-            "term" : {
-                "dcn_year" : "2021"
-           }
-        }
+        "sort"  : [ { "title" : "desc" } ],
+        "query" : { "match_all" : {} }
     }
     '''
-    pp.pprint(er.search_index(query2))
+    pp.pprint(er.search_index(query_sort_by_title).json())
+    
 
