@@ -194,14 +194,14 @@ class ElasticRest:
         '''
         Read in a local file and submit it to index.
         '''
-        local_filename = entry['doc_url'].split('/')[-1]
+        local_filename = repo_entry['doc_url'].split('/')[-1]
         result = er.get_doc(local_filename)
         if (200 == result.status_code):
             print(f'{local_filename} already in index {er.es_index}, skipping . . .')
         else:
             print(f'{local_filename} not in index {er.es_index}, downloading and indexing . . .')
-            es_body = entry
-            with requests.get(f'{docrepo_root}{entry["doc_url"]}', stream=True) as r:
+            es_body = repo_entry
+            with requests.get(f'{docrepo_root}{repo_entry["doc_url"]}', stream=True) as r:
                 with open(local_filename, 'wb') as f:
                     shutil.copyfileobj(r.raw, f)
             with open(local_filename, "rb") as local_file:
@@ -235,6 +235,11 @@ if __name__ == '__main__':
     # Get stats on the index:
     pprint.pprint(requests.get(er.es_url + er.es_index + "/_stats/docs").json())
 
+    # Retrieve one of the docs from the index:
+    doc_entry = metadata_dict['repo_entries'][4]
+    doc_id = doc_entry['doc_url'].split('/')[-1]
+    pp.pprint(er.get_doc(doc_id=doc_id).json())
+
     exit(1)
     ###############
 
@@ -258,9 +263,4 @@ if __name__ == '__main__':
     '''
     pp.pprint(er.search_index(query_sort_by_title).json())
     
-    # Retrieve one of the docs from the index:
-    doc_entry = metadata_dict['repo_entries'][4]
-    doc_id = doc_entry['doc_url'].split('/')[-1]
-    pp.pprint(er.get_doc(doc_id=doc_id).json())
-
 
