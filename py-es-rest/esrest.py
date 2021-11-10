@@ -15,7 +15,10 @@ import base64
 class ElasticRest:
     '''
     Use python's web interface instead of curl to access ElasticSearch.
-    It seems kind of silly to me now to have a whole separate class as a wrapper.
+    When I started the IEEE802.11 project I opted to use a Python library
+    instead of the actual REST interface because I didn't realize the
+    ElasticSearch REST API was so well and fully implemented. Now it
+    just seems like the library is an unneeded layer.
 
     This is still pretty specific to the IEEE802.11 repo scraper implementation.
     '''
